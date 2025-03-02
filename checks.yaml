@@ -80,3 +80,18 @@
       host: https://homeserver.local
       ssc: True
       expected_code: 200
+
+- title: 'Group 4 / HPC'
+  checks:
+    - name: Slurm Viper
+      type: slurm
+      system: viper
+      expected: up
+      path: "../hpc/generic.json"
+      key_to_system: "systems"
+
+    - name: Viper Nodes
+      type: nodes
+      system: viper
+      path: "../hpc/generic.json"
+      key_to_system: "systems"
