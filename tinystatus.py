@@ -61,6 +61,38 @@ async def check_port(host, port):
         return True
     except:
         return False
+    
+async def check_slurm(expected, system, path, key_to_system):
+    try:
+        with open(path, "r") as file:
+            data = json.load(file)
+        slurm = data[key_to_system][system]
+        if slurm["state"] == expected:
+            return True
+        else:
+            print(f"SLURM check failed: {slurm["state"]} != {expected}")
+            return False                            
+
+    except aiohttp.ClientError as err:
+        print("Network error during SLURM check: ", err)
+        return False
+    except Exception as err:
+        print("Unexpected error with ", err)
+        return False
+        
+async def check_nodes(system, path, key_to_system):
+    try:
+        with open(path, "r") as file:
+            data = json.load(file)
+        nodes = data[key_to_system][system]["nodes"]
+        return nodes
+
+    except aiohttp.ClientError as err:
+        print("Network error during SLURM check: ", err)
+        return []
+    except Exception as err:
+        print("Unexpected error with", err)
+        return []
 
 
 async def run_checks(checks):
@@ -76,12 +108,15 @@ async def run_checks(checks):
             task = tg.create_task(
                 check_http(check['host'], check['expected_code'], selfcert) if check['type'] == 'http' else
                 check_ping(check['host']) if check['type'] == 'ping' else
-                check_port(check['host'], check['port']) if check['type'] == 'port' else None,
+                check_port(check['host'], check['port']) if check['type'] == 'port' else 
+                check_slurm(check['expected'], check['system'], check['path'], check['key_to_system']) if check['type'] == 'slurm' else 
+                check_nodes(check['system'], check['path'], check['key_to_system']) if check['type'] == 'nodes' else None,
                 name=check['name']
             )
             if task:
                 background_tasks[check['name']] = task
 
+## TODO: add (optional) nodes
     results = [
         {
             "name": check["name"],
