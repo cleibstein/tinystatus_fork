@@ -116,12 +116,15 @@ async def run_checks(checks):
             if task:
                 background_tasks[check['name']] = task
 
-## TODO: add (optional) nodes
+
     results = [
         {
             "name": check["name"],
             "url": check.get("url"),
-            "status": background_tasks[check["name"]].result()}
+            "status": background_tasks[check["name"]].result(),
+            **({"nodes": await check_nodes(check["system"], check["path"], check["key_to_system"]) }
+                if check["type"] == "nodes" else {})
+        }
         for check in checks
     ]
 
